@@ -1105,7 +1105,7 @@
       // Function to convert markdown to HTML with folding sections
       async function renderCV() {
         try {
-          const response = await fetch('cv.md');
+          const response = await fetch('CV.md');
           const markdown = await response.text();
           
           const terminalText = document.querySelector('.terminal-text');
