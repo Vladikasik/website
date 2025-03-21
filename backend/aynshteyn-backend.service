@@ -1,0 +1,17 @@
+[Unit]
+Description=Aynshteyn API Backend
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/aynshteyn.dev/backend
+ExecStart=/var/www/aynshteyn.dev/backend/aynshteyn-backend -env=production -port=4000 -cors-trusted-origins="https://aynshteyn.dev"
+Restart=on-failure
+RestartSec=5s
+StandardOutput=journal
+StandardError=journal
+Environment=
+
+[Install]
+WantedBy=multi-user.target 

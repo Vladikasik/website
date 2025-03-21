@@ -21,7 +21,7 @@ class TextScramble {
   frameRequest: number;
   frame: number;
   element: HTMLElement | null;
-  resolve: Function | null;
+  resolve: ((value: unknown) => void) | null;
   originalText: string;
   
   constructor() {
@@ -68,7 +68,9 @@ class TextScramble {
     let complete = 0;
     
     for (let i = 0, n = this.queue.length; i < n; i++) {
-      let { from, to, start, end, char } = this.queue[i];
+      // Using destructuring but keeping char mutable
+      const { from, to, start, end } = this.queue[i];
+      let { char } = this.queue[i];
       
       if (this.frame >= end) {
         complete++;
@@ -90,7 +92,7 @@ class TextScramble {
     
     if (complete === this.queue.length) {
       if (this.resolve) {
-        this.resolve();
+        this.resolve(true);
       }
     } else {
       this.frameRequest = requestAnimationFrame(() => this.update());
@@ -239,7 +241,6 @@ export default function Home() {
     
     // Create a masked version of the email with special characters
     const specialChars = '*^%$#@!?';
-    let emailGlitchInterval: NodeJS.Timeout;
     
     const updateMaskedEmail = () => {
       let result = '';
@@ -279,7 +280,7 @@ export default function Home() {
     updateMaskedEmail();
     
     // Update the masked email periodically for glitch effect
-    emailGlitchInterval = setInterval(() => {
+    const emailGlitchInterval = setInterval(() => {
       updateMaskedEmail();
     }, 150); // Fast updates for glitch effect
     
@@ -291,11 +292,65 @@ export default function Home() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      setShowSuccess(true);
-      setTimeout(() => {
-        setSubmitted(true);
-        setShowSuccess(false);
-      }, 1000);
+      // Generate a random nonce for HMAC
+      const nonce = Array.from(new Array(16), () => 
+        Math.floor(Math.random() * 36).toString(36)).join('');
+      
+      // Current timestamp for freshness
+      const timestamp = Math.floor(Date.now() / 1000);
+      
+      // Collect browser info
+      const browserData = JSON.stringify({
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: navigator.platform,
+        vendor: navigator.vendor,
+        screenSize: `${window.screen.width}x${window.screen.height}`,
+        colorDepth: window.screen.colorDepth,
+        cookiesEnabled: navigator.cookieEnabled,
+        doNotTrack: navigator.doNotTrack,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Make API call to backend
+      fetch('https://api.aynshteyn.dev/api/v1/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          clientNonce: nonce,
+          timestamp,
+          browserData,
+          // Note: In a real implementation we would calculate a HMAC here
+          // but would need a shared secret between client and server
+          clientToken: 'frontend-client'
+        }),
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(() => {
+        // Success handling
+        setShowSuccess(true);
+        setTimeout(() => {
+          setSubmitted(true);
+          setShowSuccess(false);
+        }, 1000);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        // Still show success to user (don't reveal errors)
+        setShowSuccess(true);
+        setTimeout(() => {
+          setSubmitted(true);
+          setShowSuccess(false);
+        }, 1000);
+      });
     }
   };
   
@@ -307,7 +362,7 @@ export default function Home() {
     }
   };
   
-  const restartForm = () => {
+  const restartForm = (): void => {
     setEmail('');
     setCharCount(0);
     setSubmitted(false);
