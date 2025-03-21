@@ -1,0 +1,8 @@
+create backend folder in which craetea simple restapi whcih will accept email and cookie-browser infromation from js website and then store it somehwere dimple and easy analyse after
+(if you have time revise how the form of collecting emails is done right now and edit it to match the bacekdn)
+do everything safe
+you're on production server do evrything you need
+server ip is 95.163.223.236
+domain is aynshteyn.dev
+it should be safe i dont want some hackers from twitter to hack it
+maybe make a code inside built website which would be hard to decompile from website static files but will insure server about trust) or just any other method
